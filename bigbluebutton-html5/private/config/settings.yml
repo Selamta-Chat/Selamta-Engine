@@ -1,3 +1,4 @@
+
 public:
   app:
     mobileFontSize: 16px
@@ -69,7 +70,7 @@ public:
         accesskey: A
         descId: openActions
     branding:
-      displayBrandingArea: false
+      displayBrandingArea: true
     connectionTimeout: 60000
     showHelpButton: true
     effectiveConnection:
