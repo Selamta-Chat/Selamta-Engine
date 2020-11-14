@@ -9,6 +9,7 @@ import DropdownContent from '/imports/ui/components/dropdown/content/component';
 import DropdownList from '/imports/ui/components/dropdown/list/component';
 import DropdownListItem from '/imports/ui/components/dropdown/list/item/component';
 import PresentationUploaderContainer from '/imports/ui/components/presentation/presentation-uploader/container';
+import LogoUploaderContainer from '/imports/ui/components/logo/logo-uploader/container';
 import { withModalMounter } from '/imports/ui/components/modal/service';
 import withShortcutHelper from '/imports/ui/components/shortcut-help/service';
 import { styles } from '../styles';
@@ -33,6 +34,14 @@ const intlMessages = defineMessages({
   actionsLabel: {
     id: 'app.actionsBar.actionsDropdown.actionsLabel',
     description: 'Actions button label',
+  },
+  logoLabel: {
+    id: 'app.actionsBar.actionsDropdown.logoLabel',
+    description: 'Upload your Logo',
+  },
+  logoDesc: {
+    id: 'app.actionsBar.actionsDropdown.logoDesc',
+    description: 'Upload your custom Logo',
   },
   presentationLabel: {
     id: 'app.actionsBar.actionsDropdown.presentationLabel',
@@ -79,12 +88,13 @@ const intlMessages = defineMessages({
 class ActionsDropdown extends PureComponent {
   constructor(props) {
     super(props);
-
+    this.logoId = _.uniqueId('action-item-');
     this.presentationItemId = _.uniqueId('action-item-');
     this.pollId = _.uniqueId('action-item-');
     this.takePresenterId = _.uniqueId('action-item-');
 
     this.handlePresentationClick = this.handlePresentationClick.bind(this);
+    this.handleLogoUploadClick = this.handleLogoUploadClick.bind(this);
     this.handleExternalVideoClick = this.handleExternalVideoClick.bind(this);
   }
 
@@ -110,6 +120,8 @@ class ActionsDropdown extends PureComponent {
     const {
       pollBtnLabel,
       pollBtnDesc,
+      logoLabel,
+      logoDesc,
       presentationLabel,
       presentationDesc,
       takePresenter,
@@ -121,6 +133,20 @@ class ActionsDropdown extends PureComponent {
     } = intl;
 
     return _.compact([
+      // Upload Custom Logo Feature added to the DropDown List 
+      // TODO :: amIModerator is better check than amIPresenter
+      (amIPresenter
+        ? (
+          <DropdownListItem
+            data-test="uploadLogo"
+            icon="upload"
+            label={formatMessage(logoLabel)}
+            description={formatMessage(logoDesc)}
+            key={this.logoId}
+            onClick={this.handleLogoUploadClick}
+          />
+        )
+        : null),
       (amIPresenter && isPollingEnabled
         ? (
           <DropdownListItem
@@ -184,6 +210,11 @@ class ActionsDropdown extends PureComponent {
   handlePresentationClick() {
     const { mountModal } = this.props;
     mountModal(<PresentationUploaderContainer />);
+ 
+  } 
+  handleLogoUploadClick() {
+    const { mountModal } = this.props;
+    mountModal(<LogoUploaderContainer />);
   }
 
   render() {
