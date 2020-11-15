@@ -1,4 +1,4 @@
-import React, { PureComponent } from 'react';
+import React, { Component, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Session } from 'meteor/session';
 import cx from 'classnames';
@@ -12,7 +12,7 @@ import Button from '../button/component';
 import RecordingIndicator from './recording-indicator/container';
 import TalkingIndicatorContainer from '/imports/ui/components/nav-bar/talking-indicator/container';
 import SettingsDropdownContainer from './settings-dropdown/container';
-
+import axios from 'axios';
 
 const intlMessages = defineMessages({
   toggleUserListLabel: {
@@ -26,6 +26,10 @@ const intlMessages = defineMessages({
   newMessages: {
     id: 'app.navBar.toggleUserList.newMessages',
     description: 'label for toggleUserList btn when showing red notification',
+  },
+  logoUpload: {
+    id: 'app.logoUploder.title',
+    description: 'title of the modal',
   },
 });
 
@@ -41,7 +45,22 @@ const defaultProps = {
   shortcuts: '',
 };
 
-class NavBar extends PureComponent {
+class NavBar extends Component {
+  constructor(props) {
+    super(props);
+
+
+
+    this.state = {
+      encodedImage: ''
+    };
+
+ 
+    this.showUploadedLogo = this.showUploadedLogo.bind(this);
+    this.handleDownload = this.handleDownload.bind(this);
+  }
+  
+ 
   static handleToggleUserList() {
     Session.set(
       'openPanel',
@@ -52,6 +71,47 @@ class NavBar extends PureComponent {
     Session.set('idChatOpen', '');
   }
 
+
+  // Do not make API call if the User has already downloaded the Logo
+  showUploadedLogo() {
+    var logo = localStorage.getItem('logo')
+    console.log(typeof logo, '\n', logo)
+    if (logo) {
+      this.setState({ encodedImage: logo })
+    } else {
+      this.handleDownload();
+    }
+
+  }
+  // Download the Logo image and store it in the Local storage 
+  handleDownload() {
+    // Get the Session Token from the current Url
+    var url = window.location.href;
+    var params = {};
+    var parser = document.createElement('a');
+    parser.href = url;
+    var query = parser.search.substring(1);
+    var vars = query.split('&');
+    for (var i = 0; i < vars.length; i++) {
+      var pair = vars[i].split('=');
+      params[pair[0]] = decodeURIComponent(pair[1]);
+    }
+    console.log('Download =>', params.sessionToken, typeof params.sessionToken)
+    // Make an AJAX upload request using Axios 
+    downloadedLogo = axios.post(`http://localhost:3030/api/imageProcessor/download/${params.sessionToken}`, {
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+        "Access-Control-Allow-Origin": "*",
+        "mode": "no-cors"
+      }
+    }).then(response => {
+      const data = response.data;
+      this.handleDownload();
+      localStorage.setItem('logo', downloadedLogo)
+      this.setState({ encodedImage: localStorage.getItem('logo') })
+
+    }).catch((error) => console.log(error))
+  }
   componentDidMount() {
     const {
       processOutsideToggleRecording,
@@ -63,7 +123,9 @@ class NavBar extends PureComponent {
       connectRecordingObserver();
       window.addEventListener('message', processOutsideToggleRecording);
     }
+
   }
+
 
   componentWillUnmount() {
     clearInterval(this.interval);
@@ -79,9 +141,10 @@ class NavBar extends PureComponent {
       presentationTitle,
       amIModerator,
     } = this.props;
-
+    const { encodedImage } = this.state;
 
     const toggleBtnClasses = {};
+
     toggleBtnClasses[styles.btn] = true;
     toggleBtnClasses[styles.btnWithNotificationDot] = hasUnreadMessages;
 
@@ -93,7 +156,8 @@ class NavBar extends PureComponent {
         <div className={styles.top}>
           <div className={styles.left}>
             {!isExpanded ? null
-              : <Icon iconName="left_arrow" className={styles.arrowLeft} />
+              : <Icon iconName="left_arrow"
+                className={styles.arrowLeft} />
             }
             <Button
               data-test="userListToggleButton"
@@ -111,7 +175,22 @@ class NavBar extends PureComponent {
             {isExpanded ? null
               : <Icon iconName="right_arrow" className={styles.arrowRight} />
             }
+
+
           </div>
+          <Button
+            className={cx(toggleBtnClasses)}
+            label={intl.formatMessage(intlMessages.logoUpload)}
+            size="sm"
+            icon="upload"
+            circle
+            onClick={this.showUploadedLogo}
+          />
+          <div className={styles.logoImageContainer}>
+            <img className={styles.logoImage} src={`data:image/png;base64,${encodedImage}`} alt="Logo" />
+          </div>
+
+          <span id="source"> </span>
           <div className={styles.center}>
             <h1 className={styles.presentationTitle}>{presentationTitle}</h1>
 
@@ -135,3 +214,4 @@ class NavBar extends PureComponent {
 NavBar.propTypes = propTypes;
 NavBar.defaultProps = defaultProps;
 export default withShortcutHelper(withModalMounter(injectIntl(NavBar)), 'toggleUserList');
+

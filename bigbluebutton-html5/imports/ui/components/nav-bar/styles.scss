@@ -44,6 +44,19 @@
   flex: 1;
 }
 
+.logoImageContainer{
+  width: 200px; 
+  min-height: auto;
+  max-height: 100px;
+  float: left;
+  margin: 1px;
+  padding: 1px;
+}
+.logoImage{
+  max-height: fit-content;
+  max-width: 200px;
+  height: 100px;
+}
 .presentationTitle {
   font-weight: 200;
   color: var(--color-white);
